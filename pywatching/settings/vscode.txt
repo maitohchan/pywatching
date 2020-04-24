@@ -1,0 +1,5 @@
+python.linting.flake8.enabled
+python.linting.mypy.enabled
+python.linting.pylint.enabled false
+python.format.provider = 'black'
+editor.formatOnSave

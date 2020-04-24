@@ -2,12 +2,19 @@ import requests
 
 
 class Line(object):
+    """
+
+    """
+
     API = "https://notify-api.line.me/api/notify"
 
-    def __init__(self, token:str):
+    def __init__(self, token: str):
         self.token = token
 
-    def notify(self, message:str, filename=None):
+    def notify(self, message: str, filename=None):
+        """
+        
+        """
         payload = {"message": message}
         headers = {"Authorization": "Bearer " + self.token}
         files = {"imageFile": open(filename, "rb")} if filename else None
@@ -15,6 +22,7 @@ class Line(object):
         return res.status_code == 200
 
 
+"""
 if __name__ == "__main__":
     import argparse
 
@@ -24,3 +32,4 @@ if __name__ == "__main__":
 
     line = Line(args.token)
     line.notify(message="test")
+"""
