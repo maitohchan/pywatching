@@ -2,11 +2,10 @@ from __future__ import print_function
 import pickle
 import os
 import datetime
+from typing import List
 from googleapiclient.discovery import build
 from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
-
-from line import Line
 
 
 class Gmail(object):
@@ -66,11 +65,10 @@ class Gmail(object):
         """
         return dt.strftime("%Y/%m/%d")
 
-    @staticmethod
-    def __get_today() -> datetime.date:
+    def __get_today(self) -> str:
         """
         """
-        return datetime.date.today()
+        return self.__dt2str(datetime.date.today())
 
     @staticmethod
     def __get_previous_date(dt: datetime.date) -> datetime.date:
@@ -84,31 +82,30 @@ class Gmail(object):
         """
         return dt + datetime.timedelta(days=1)
 
-    def __get_query(self, address: str, date: str = None) -> str:
+    def __get_query(self, address: str, date: datetime.date) -> str:
         """
         """
-        today = self.__get_today() if date is None else self.__str2dt(date)
-        from_date = self.__get_previous_date(today)
-        to_date = self.__get_next_date(today)
-        return "from:{} after:{} before:{}".format(
-            address, self.__dt2str(from_date), self.__dt2str(to_date)
-        )
+        from_date = self.__get_previous_date(date)
+        to_date = self.__get_next_date(date)
+        return "from:{} after:{} before:{}".format(address, from_date, to_date)
 
-    def __load_ids(self) -> list:
+    def __load_ids(self, date: str) -> dict:
         """
         """
         if os.path.exists(self.__id_file):
             with open(self.__id_file, "rb") as f:
                 ids = pickle.load(f)
+            if ids["date"] != date:
+                ids = {"date": date, "ids": list()}
         else:
-            ids = list()
+            ids = {"date": date, "ids": list()}
         return ids
 
-    def __save_ids(self):
+    def __save_ids(self, ids):
         """
         """
         with open(self.__id_file, "wb") as f:
-            pickle.dump(self.__id_list, f)
+            pickle.dump(ids, f)
 
     def __extract_date_and_subject(self, mid):
         """
@@ -118,58 +115,53 @@ class Gmail(object):
         has_date = False
         has_subject = False
         for header in info["payload"]["headers"]:
-            if header["name"] == "Date":
+            if not has_date and header["name"] == "Date":
                 date = header["value"]
                 has_date = True
-            elif header["name"] == "Subject":
+            elif not has_subject and header["name"] == "Subject":
                 subject = header["value"]
                 has_subject = True
             if has_date and has_subject:
                 break
         return date, subject
 
-    def get_message_list(self, address: str, date: str = None):
+    def get_messages(self, address: str, date: str = None):
         """
         """
         retval = list()
+
+        date = self.__get_today() if date is None else date
         msginfo = self.__msg_api.list(
-            userId="me", maxResults=10, q=self.__get_query(address, date)
+            userId="me", maxResults=10, q=self.__get_query(address, self.__str2dt(date))
         ).execute()
 
         if msginfo["resultSizeEstimate"] == 0:
             return retval
 
-        ids = self.__load_ids()
+        ids = self.__load_ids(date)
 
         for msg in msginfo["messages"]:
             mid = msg["id"]
-            if mid in ids:
+            if mid in ids["ids"]:
                 continue
 
             date, subject = self.__extract_date_and_subject(mid)
             retval.append(
                 "Date: {}\nSubject: {}\n{}".format(date, subject, msg["snippet"])
             )
-            ids.append(mid)
+            ids["ids"].append(mid)
 
-        self.__save_ids()
+        ids["date"] = date
+        self.__save_ids(ids)
         return retval
 
 
-def main():
-    import config
+if __name__ == "__main__":
     import argparse
 
     parser = argparse.ArgumentParser()
     parser.add_argument("email", type=str)
     args = parser.parse_args()
 
-    line = Line(config.LINE_TOKEN)
     gmail = Gmail("credentials.json")
-    ret = gmail.get_message_list(args.email)
-    for r in ret:
-        line.notify(message=r)
-
-
-if __name__ == "__main__":
-    main()
+    ret = gmail.get_messages(args.email)
