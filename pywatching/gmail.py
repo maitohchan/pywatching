@@ -1,11 +1,12 @@
 from __future__ import print_function
 import pickle
 import os
-import datetime
-from typing import List
+
 from googleapiclient.discovery import build
 from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
+
+from .date import Date
 
 
 class Gmail(object):
@@ -14,10 +15,10 @@ class Gmail(object):
     https://developers.google.com/gmail/api/quickstart/python
 
     Args:
-        credentials (str): 
+        credentials (str):
 
     Attributes:
-        SCOPES (list of str): 
+        SCOPES (list of str):
         service :
 
     """
@@ -53,40 +54,11 @@ class Gmail(object):
 
         return build("gmail", "v1", credentials=creds)
 
-    @staticmethod
-    def __str2dt(date: str) -> datetime.date:
+    def __get_query(self, address: str, date: Date) -> str:
         """
         """
-        return datetime.datetime.strptime(date, "%Y/%m/%d")
-
-    @staticmethod
-    def __dt2str(dt: datetime.date) -> str:
-        """
-        """
-        return dt.strftime("%Y/%m/%d")
-
-    def __get_today(self) -> str:
-        """
-        """
-        return self.__dt2str(datetime.date.today())
-
-    @staticmethod
-    def __get_previous_date(dt: datetime.date) -> datetime.date:
-        """
-        """
-        return dt + datetime.timedelta(days=-1)
-
-    @staticmethod
-    def __get_next_date(dt: datetime.date) -> datetime.date:
-        """
-        """
-        return dt + datetime.timedelta(days=1)
-
-    def __get_query(self, address: str, date: datetime.date) -> str:
-        """
-        """
-        from_date = self.__get_previous_date(date)
-        to_date = self.__get_next_date(date)
+        from_date = date.yesterday()
+        to_date = date.tomorrow()
         return "from:{} after:{} before:{}".format(address, from_date, to_date)
 
     def __load_ids(self, date: str) -> dict:
@@ -130,9 +102,9 @@ class Gmail(object):
         """
         retval = list()
 
-        date = self.__get_today() if date is None else date
+        d = Date(date)
         msginfo = self.__msg_api.list(
-            userId="me", maxResults=10, q=self.__get_query(address, self.__str2dt(date))
+            userId="me", maxResults=10, q=self.__get_query(address, d)
         ).execute()
 
         if msginfo["resultSizeEstimate"] == 0:
@@ -151,7 +123,7 @@ class Gmail(object):
             )
             ids["ids"].append(mid)
 
-        ids["date"] = date
+        ids["date"] = d.to_str()
         self.__save_ids(ids)
         return retval
 
