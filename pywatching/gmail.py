@@ -6,7 +6,7 @@ from googleapiclient.discovery import build
 from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
 
-from .date import Date
+from pywatching.date import Date
 
 
 class Gmail(object):
@@ -25,12 +25,11 @@ class Gmail(object):
 
     SCOPES = ["https://www.googleapis.com/auth/gmail.readonly"]
 
-    def __init__(self, credentials: str = "credentials.json", tmp_dir: str = "tmp"):
-        service = self.__connect(credentials)
-        self.__msg_api = service.users().messages()
+    def __init__(self, tmp_dir: str = "tmp"):
+        self.__msg_api = None
         self.__id_file = os.path.join(tmp_dir, "gmail_ids.pkl")
 
-    def __connect(self, credentials: str):
+    def connect(self, credentials: str = 'credentials.json'):
         """
 
         """
@@ -43,16 +42,20 @@ class Gmail(object):
         if not creds or not creds.valid:
             if creds and creds.expired and creds.refresh_token:
                 creds.refresh(Request())
-            else:
+            elif os.path.exists(credentials):
                 flow = InstalledAppFlow.from_client_secrets_file(
                     credentials, self.SCOPES
                 )
                 creds = flow.run_local_server()
+            else:
+                return False
 
             with open("token.pickle", "wb") as token:
                 pickle.dump(creds, token)
 
-        return build("gmail", "v1", credentials=creds)
+        service = build("gmail", "v1", credentials=creds)
+        self.__msg_api = service.users().messages()
+        return True
 
     def __get_query(self, address: str, date: Date) -> str:
         """
@@ -101,6 +104,10 @@ class Gmail(object):
         """
         """
         retval = list()
+        print(address)
+
+        if self.__msg_api is None:
+            return retval
 
         d = Date(date)
         msginfo = self.__msg_api.list(
@@ -113,6 +120,7 @@ class Gmail(object):
         ids = self.__load_ids(date)
 
         for msg in msginfo["messages"]:
+            print(msg)
             mid = msg["id"]
             if mid in ids["ids"]:
                 continue
@@ -132,8 +140,10 @@ if __name__ == "__main__":
     import argparse
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("email", type=str)
+    parser.add_argument("--cred", type=str)
+    parser.add_argument("--email", type=str)
     args = parser.parse_args()
 
-    gmail = Gmail("credentials.json")
-    ret = gmail.get_messages(args.email)
+    gmail = Gmail()
+    if gmail.connect():
+        print(gmail.get_messages(args.email))
