@@ -22,6 +22,7 @@ class Gmail(object):
         SCOPES (list of str): auth API
         msg_api (googleapiclient.discovery.Resource): message API
         id_file (str): Gmail IDs file
+        token_file (str): token file
     """
 
     SCOPES = ["https://www.googleapis.com/auth/gmail.readonly"]
@@ -29,18 +30,20 @@ class Gmail(object):
     def __init__(self, tmp_dir: str = "tmp"):
         self.__msg_api = None
         self.__id_file = os.path.join(tmp_dir, "gmail_ids.pkl")
+        self.__token_file = os.path.join(tmp_dir, "token.pickle")
 
-    def connect(self, credentials: str = 'credentials.json'):
-        """connect Gmail server
+    def connect(self, credentials: str = 'credentials.json') -> bool:
+        """connect Gmail server.
 
         Args:
-        
-
+            credentials (str): credential file name
+        Returns:
+            bool: True if successful, False otherwise.
         """
         creds = None
 
-        if os.path.exists("token.pickle"):
-            with open("token.pickle", "rb") as token:
+        if os.path.exists(self.__token_file):
+            with open(self.__token_file, "rb") as token:
                 creds = pickle.load(token)
 
         if not creds or not creds.valid:
@@ -54,7 +57,7 @@ class Gmail(object):
             else:
                 return False
 
-            with open("token.pickle", "wb") as token:
+            with open(self.__token_file, "wb") as token:
                 pickle.dump(creds, token)
 
         try:
@@ -63,18 +66,37 @@ class Gmail(object):
             return False
 
         self.__msg_api = service.users().messages()
-        print(self.__msg_api )
         return True
 
-    def __get_query(self, address: str, date: Date) -> str:
-        """
+    def __create_query(self, address: str, date: Date) -> str:
+        """create query.
+
+        Args:
+            address (str): email address
+            date (Date): date
+        Returns:
+            str: query
         """
         from_date = date.yesterday()
         to_date = date.tomorrow()
         return "from:{} after:{} before:{}".format(address, from_date, to_date)
 
     def __load_ids(self, address: str, date: str) -> dict:
-        """
+        """load IDs from pickle file
+
+        ret = {
+            address: {
+                "date": date,
+                "ids": []
+            },
+            ...
+        }
+
+        Args:
+            address (str): email address
+            date (Date): date
+        Returns:
+            dict: read data
         """
         ids = {address: {"date": date, "ids": list()}}
         if os.path.exists(self.__id_file):
@@ -85,14 +107,22 @@ class Gmail(object):
 
         return ids
 
-    def __save_ids(self, ids):
-        """
+    def __save_ids(self, ids: dict):
+        """save ID data in pickle file.
+
+        Args:
+            ids (dict): saved data
         """
         with open(self.__id_file, "wb") as f:
             pickle.dump(ids, f)
 
-    def __extract_date_and_subject(self, mid):
-        """
+    def __extract_info(self, mid: str) -> tuple:
+        """extract mail information, which are date, subject and snippet.
+
+        Args:
+            mid (str): message ID
+        Returns:
+            str, str, str: date, subject and snippet
         """
         info = self.__msg_api.get(userId="me", id=mid).execute()
 
@@ -110,8 +140,14 @@ class Gmail(object):
 
         return date, subject, info["snippet"]
 
-    def get_messages(self, address: str, date: str = None):
-        """
+    def get_messages(self, address: str, date: str = None) -> list:
+        """get messages.
+
+        Args:
+            address (str): email address
+            date (str): date
+        Returns:
+            list: messages
         """
         retval = list()
 
@@ -121,7 +157,7 @@ class Gmail(object):
         d = Date(date)
         try:
             msginfo = self.__msg_api.list(
-                userId="me", maxResults=10, q=self.__get_query(address, d)
+                userId="me", maxResults=10, q=self.__create_query(address, d)
             ).execute()
         except httplib2.ServerNotFoundError:
             return retval
@@ -136,7 +172,7 @@ class Gmail(object):
             if mid in ids[address]["ids"]:
                 continue
 
-            date, subject, snippet = self.__extract_date_and_subject(mid)
+            date, subject, snippet = self.__extract_info(mid)
             retval.append(
                 "Date: {}\nSubject: {}\n{}".format(date, subject, snippet)
             )
