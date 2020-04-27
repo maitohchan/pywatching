@@ -12,7 +12,9 @@ class TestDate(object):
         assert Date().date == datetime.date.today().strftime("%Y/%m/%d")
 
     def test_yesterday(self):
-        assert Date().yesterday() == (datetime.date.today() + datetime.timedelta(days=-1)).strftime("%Y/%m/%d")
+        assert Date().yesterday() == \
+            (datetime.date.today() + datetime.timedelta(days=-1)).strftime("%Y/%m/%d")
 
     def test_tomorrow(self):
-        assert Date().tomorrow() == (datetime.date.today() + datetime.timedelta(days=1)).strftime("%Y/%m/%d")
+        assert Date().tomorrow() == \
+            (datetime.date.today() + datetime.timedelta(days=1)).strftime("%Y/%m/%d")

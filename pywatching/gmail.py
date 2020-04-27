@@ -5,22 +5,23 @@ import os
 from googleapiclient.discovery import build
 from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
+import httplib2
 
 from pywatching.date import Date
 
 
 class Gmail(object):
-    """
+    """Gmail class
 
     https://developers.google.com/gmail/api/quickstart/python
 
     Args:
-        credentials (str):
+        tmp_dir (str): temporary directory name
 
     Attributes:
-        SCOPES (list of str):
-        service :
-
+        SCOPES (list of str): auth API
+        msg_api (googleapiclient.discovery.Resource): message API
+        id_file (str): Gmail IDs file
     """
 
     SCOPES = ["https://www.googleapis.com/auth/gmail.readonly"]
@@ -30,7 +31,10 @@ class Gmail(object):
         self.__id_file = os.path.join(tmp_dir, "gmail_ids.pkl")
 
     def connect(self, credentials: str = 'credentials.json'):
-        """
+        """connect Gmail server
+
+        Args:
+        
 
         """
         creds = None
@@ -55,10 +59,11 @@ class Gmail(object):
 
         try:
             service = build("gmail", "v1", credentials=creds)
-        except:
+        except httplib2.ServerNotFoundError:
             return False
 
         self.__msg_api = service.users().messages()
+        print(self.__msg_api )
         return True
 
     def __get_query(self, address: str, date: Date) -> str:
@@ -66,12 +71,9 @@ class Gmail(object):
         """
         from_date = date.yesterday()
         to_date = date.tomorrow()
-        print(to_date)
-        query = "from:{} after:{} before:{}".format(address, from_date, to_date)
-        print(query)
-        return query
+        return "from:{} after:{} before:{}".format(address, from_date, to_date)
 
-    def __load_ids(self, address :str, date: str) -> dict:
+    def __load_ids(self, address: str, date: str) -> dict:
         """
         """
         ids = {address: {"date": date, "ids": list()}}
@@ -121,15 +123,13 @@ class Gmail(object):
             msginfo = self.__msg_api.list(
                 userId="me", maxResults=10, q=self.__get_query(address, d)
             ).execute()
-        except:
-            print("ppp")
+        except httplib2.ServerNotFoundError:
             return retval
 
         if msginfo["resultSizeEstimate"] == 0:
             return retval
 
         ids = self.__load_ids(address, d.date)
-        print(ids)
 
         for msg in msginfo["messages"]:
             mid = msg["id"]
