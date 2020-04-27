@@ -53,7 +53,11 @@ class Gmail(object):
             with open("token.pickle", "wb") as token:
                 pickle.dump(creds, token)
 
-        service = build("gmail", "v1", credentials=creds)
+        try:
+            service = build("gmail", "v1", credentials=creds)
+        except:
+            return False
+
         self.__msg_api = service.users().messages()
         return True
 
@@ -62,18 +66,21 @@ class Gmail(object):
         """
         from_date = date.yesterday()
         to_date = date.tomorrow()
-        return "from:{} after:{} before:{}".format(address, from_date, to_date)
+        print(to_date)
+        query = "from:{} after:{} before:{}".format(address, from_date, to_date)
+        print(query)
+        return query
 
-    def __load_ids(self, date: str) -> dict:
+    def __load_ids(self, address :str, date: str) -> dict:
         """
         """
+        ids = {address: {"date": date, "ids": list()}}
         if os.path.exists(self.__id_file):
             with open(self.__id_file, "rb") as f:
-                ids = pickle.load(f)
-            if ids["date"] != date:
-                ids = {"date": date, "ids": list()}
-        else:
-            ids = {"date": date, "ids": list()}
+                loaded_ids = pickle.load(f)
+            if loaded_ids[address]["date"] == date:
+                ids = loaded_ids
+
         return ids
 
     def __save_ids(self, ids):
@@ -98,40 +105,44 @@ class Gmail(object):
                 has_subject = True
             if has_date and has_subject:
                 break
-        return date, subject
+
+        return date, subject, info["snippet"]
 
     def get_messages(self, address: str, date: str = None):
         """
         """
         retval = list()
-        print(address)
 
-        if self.__msg_api is None:
+        if self.__msg_api is None or address is None:
             return retval
 
         d = Date(date)
-        msginfo = self.__msg_api.list(
-            userId="me", maxResults=10, q=self.__get_query(address, d)
-        ).execute()
+        try:
+            msginfo = self.__msg_api.list(
+                userId="me", maxResults=10, q=self.__get_query(address, d)
+            ).execute()
+        except:
+            print("ppp")
+            return retval
 
         if msginfo["resultSizeEstimate"] == 0:
             return retval
 
-        ids = self.__load_ids(date)
+        ids = self.__load_ids(address, d.date)
+        print(ids)
 
         for msg in msginfo["messages"]:
-            print(msg)
             mid = msg["id"]
-            if mid in ids["ids"]:
+            if mid in ids[address]["ids"]:
                 continue
 
-            date, subject = self.__extract_date_and_subject(mid)
+            date, subject, snippet = self.__extract_date_and_subject(mid)
             retval.append(
-                "Date: {}\nSubject: {}\n{}".format(date, subject, msg["snippet"])
+                "Date: {}\nSubject: {}\n{}".format(date, subject, snippet)
             )
-            ids["ids"].append(mid)
+            ids[address]["ids"].append(mid)
 
-        ids["date"] = d.to_str()
+        ids[address]["date"] = d.date
         self.__save_ids(ids)
         return retval
 
@@ -142,8 +153,11 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--cred", type=str)
     parser.add_argument("--email", type=str)
+    parser.add_argument("--date", type=str)
     args = parser.parse_args()
 
     gmail = Gmail()
     if gmail.connect():
-        print(gmail.get_messages(args.email))
+        print(gmail.get_messages(args.email, args.date))
+    else:
+        print("Cannot connect.")

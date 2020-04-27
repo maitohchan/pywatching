@@ -21,7 +21,7 @@ class Date(object):
         Returns:
             datetime: current date
         """
-        return self.__dt
+        return self.__dt.strftime("%Y/%m/%d")
 
     @staticmethod
     def __str2dt(date: str) -> datetime.date:
@@ -34,26 +34,18 @@ class Date(object):
         """
         return datetime.datetime.strptime(date, "%Y/%m/%d")
 
-    def yesterday(self) -> datetime.date:
+    def yesterday(self) -> str:
         """return previous date
 
         Returns:
             datetime: previous date
         """
-        return self.__dt + datetime.timedelta(days=-1)
+        return (self.__dt + datetime.timedelta(days=-1)).strftime("%Y/%m/%d")
 
-    def tomorrow(self) -> datetime.date:
+    def tomorrow(self) -> str:
         """return next date
 
         Returns:
             datetime: next date
         """
-        return self.__dt + datetime.timedelta(days=1)
-
-    def to_str(self) -> str:
-        """convert to string
-
-        Returns:
-            str: current date
-        """
-        return self.__dt.strftime("%Y/%m/%d")
+        return (self.__dt + datetime.timedelta(days=1)).strftime("%Y/%m/%d")
