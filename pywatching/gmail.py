@@ -166,16 +166,18 @@ class Gmail(object):
             return retval
 
         ids = self.__load_ids(address, d.date)
+        msgs = sorted(msginfo["messages"], key=lambda x:x["id"])
 
-        for msg in msginfo["messages"]:
+        for msg in msgs:
             mid = msg["id"]
             if mid in ids[address]["ids"]:
                 continue
 
             date, subject, snippet = self.__extract_info(mid)
-            retval.append(
-                "Date: {}\nSubject: {}\n{}".format(date, subject, snippet)
-            )
+            retval.append({
+                "id": mid,
+                "msg": "Date: {}\nSubject: {}\n{}".format(date, subject, snippet)
+            })
             ids[address]["ids"].append(mid)
 
         ids[address]["date"] = d.date
