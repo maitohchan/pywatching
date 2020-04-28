@@ -5,12 +5,6 @@ import json
 import sys
 
 
-def load_config(filename):
-    with open(filename, 'r') as f:
-        jsondata = json.load(f)
-    return jsondata
-
-
 if __name__ == "__main__":
     import argparse
 
@@ -18,18 +12,21 @@ if __name__ == "__main__":
     parser.add_argument("--configs", type=str, default="./configs.json")
     args = parser.parse_args()
 
-    configs = load_config(args.configs)
+    with open(args.configs, 'r') as f:
+        configs = json.load(f)
+
     ln = Line(configs["line"]["token"])
     gm = Gmail()
 
     if not gm.connect(configs["gmail"]["credfile"]):
+        print("Cannot connect Gmail.")
         sys.exit(1)
 
     for addr in configs["gmail"]["addrs"]:
         for m in gm.get_messages(addr):
             ret = ln.notify(message=m["msg"])
             log = "Success: " if ret else "Fail "
-            log += addr + "(" + m["id"] + ")"
+            log += addr + " (id = " + m["id"] + ")"
             print(log)
 
     sys.exit(0)
