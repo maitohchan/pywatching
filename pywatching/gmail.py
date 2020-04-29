@@ -85,11 +85,11 @@ class Gmail(object):
         """load IDs from pickle file
 
         ret = {
-            address: {
-                "date": date,
-                "ids": []
-            },
-            ...
+            "date": date,
+            "ids": {
+                address1: [x,y,z,,,],
+                address2: [a,b,c,,,]
+            }
         }
 
         Args:
@@ -98,14 +98,17 @@ class Gmail(object):
         Returns:
             dict: read data
         """
-        ids = {address: {"date": date, "ids": list()}}
+        ret = {"date": date, "ids": dict()}
         if os.path.exists(self.__id_file):
             with open(self.__id_file, "rb") as f:
                 loaded_ids = pickle.load(f)
-            if loaded_ids[address]["date"] == date:
-                ids = loaded_ids
+            if loaded_ids["date"] == date:
+                ret = loaded_ids
 
-        return ids
+        if address not in ret["ids"].keys():
+            ret["ids"][address] = list()
+
+        return ret
 
     def __save_ids(self, ids: dict):
         """save ID data in pickle file.
@@ -168,9 +171,9 @@ class Gmail(object):
         ids = self.__load_ids(address, d.date)
         msgs = sorted(msginfo["messages"], key=lambda x:x["id"])
 
-        for msg in msgs:
-            mid = msg["id"]
-            if mid in ids[address]["ids"]:
+        for m in msgs:
+            mid = m["id"]
+            if mid in ids["ids"][address]:
                 continue
 
             date, subject, snippet = self.__extract_info(mid)
@@ -178,9 +181,9 @@ class Gmail(object):
                 "id": mid,
                 "msg": "Date: {}\nSubject: {}\n{}".format(date, subject, snippet)
             })
-            ids[address]["ids"].append(mid)
+            ids["ids"][address].append(mid)
 
-        ids[address]["date"] = d.date
+        ids["date"] = d.date
         self.__save_ids(ids)
         return retval
 
