@@ -1,4 +1,4 @@
-from pywatching.ghome import GoogleHomeMini
+from pywatching.googlehome import GoogleHome
 import json
 
 
@@ -12,6 +12,6 @@ if __name__ == '__main__':
     with open(args.configs, 'r') as f:
         configs = json.load(f)
 
-    for a in configs["ghome"]["ip_addrs"]:
-        ghm = GoogleHomeMini(ip_addr=a)
-        ghm.play(configs["ghome"]["mp3_url"])
+    for a in configs["googlehome"]["ip_addrs"]:
+        gh = GoogleHome(ip_addr=a)
+        gh.play(configs["ghome"]["mp3_url"])
