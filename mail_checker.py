@@ -23,6 +23,7 @@ if __name__ == "__main__":
         sys.exit(1)
 
     for addr in configs["gmail"]["addrs"]:
+        print(addr)
         for m in gm.get_messages(addr):
             ret = ln.notify(message=m["msg"])
             log = "Success: " if ret else "Fail "

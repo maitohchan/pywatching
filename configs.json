@@ -8,5 +8,9 @@
         "addrs": [
             "xxx@yyy",
         ]
+    },
+    "ghome": {
+        "ip_addrs": [],
+        "mp3_url": ""
     }
 }
