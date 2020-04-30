@@ -14,4 +14,4 @@ if __name__ == '__main__':
 
     for a in configs["googlehome"]["ip_addrs"]:
         gh = GoogleHome(ip_addr=a)
-        gh.play(configs["ghome"]["mp3_url"])
+        gh.play(configs["googlehome"]["mp3_url"])
