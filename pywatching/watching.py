@@ -1,9 +1,15 @@
 from pywatching.googlehome import GoogleHome
 from pywatching.line import Line
 from pywatching.gmail import Gmail
+from pywatching.logger import Logger
 
+import argparse
 import json
 import os
+
+lg = Logger(__name__)
+lg.set_logfile(os.path.join(os.getcwd(), "watching_system.log"))
+logger = lg.logger
 
 
 def alarm(configs):
@@ -18,22 +24,22 @@ def notify(configs):
     gm = Gmail()
 
     if not gm.connect(configs["gmail"]["credfile"]):
-        print("Cannot connect Gmail.")
+        logger.debug("Cannot connect Gmail.")
         return False
 
     for addr in configs["gmail"]["addrs"]:
-        print(addr)
+        logger.info(addr)
         for m in gm.get_messages(addr):
             ret = ln.notify(message=m["msg"])
             log = "Success: " if ret else "Fail "
             log += addr + " (id = " + m["id"] + ")"
-            print(log)
+            logger.info(log)
 
     return True
 
 
 def main():
-    import argparse
+    logger.info("--- start logging ---")
 
     default_config_path = os.path.join(os.getcwd(), "configs.json")
     parser = argparse.ArgumentParser()
@@ -49,7 +55,9 @@ def main():
         "notify": notify
     }
 
-    func[args.type](configs)
+    ret = func[args.type](configs)
+    logger.info(args.type + " -> " + str(ret))
+    logger.info("--- end logging ---")
 
 
 if __name__ == '__main__':

@@ -169,7 +169,7 @@ class Gmail(object):
             return retval
 
         ids = self.__load_ids(address, d.date)
-        msgs = sorted(msginfo["messages"], key=lambda x:x["id"])
+        msgs = sorted(msginfo["messages"], key=lambda x: x["id"])
 
         for m in msgs:
             mid = m["id"]
@@ -186,19 +186,3 @@ class Gmail(object):
         ids["date"] = d.date
         self.__save_ids(ids)
         return retval
-
-
-if __name__ == "__main__":
-    import argparse
-
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--cred", type=str)
-    parser.add_argument("--email", type=str)
-    parser.add_argument("--date", type=str)
-    args = parser.parse_args()
-
-    gmail = Gmail()
-    if gmail.connect():
-        print(gmail.get_messages(args.email, args.date))
-    else:
-        print("Cannot connect.")
