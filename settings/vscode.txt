@@ -1,5 +1,12 @@
+python
+jupyter
+autoDocstring
+
+
 python.linting.flake8.enabled
 python.linting.mypy.enabled
 python.linting.pylint.enabled false
 python.format.provider = 'black'
 editor.formatOnSave
+python.autoComplete.addBrackets: true
+autoDocstring.docstringFormat = 'google'
