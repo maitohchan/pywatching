@@ -77,9 +77,7 @@ class Gmail(object):
         Returns:
             str: query
         """
-        from_date = date.yesterday()
-        to_date = date.tomorrow()
-        return "from:{} after:{} before:{}".format(address, from_date, to_date)
+        return "from:{} after:{} before:{}".format(address, date.today(), date.tomorrow())
 
     def __load_ids(self, address: str, date: str) -> dict:
         """load IDs from pickle file

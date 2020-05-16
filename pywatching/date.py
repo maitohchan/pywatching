@@ -49,3 +49,11 @@ class Date(object):
             datetime: next date
         """
         return (self.__dt + datetime.timedelta(days=1)).strftime("%Y/%m/%d")
+
+    def today(self) -> str:
+        """return today
+
+        Returns:
+            datetime: today
+        """
+        return self.__dt.strftime("%Y/%m/%d")
