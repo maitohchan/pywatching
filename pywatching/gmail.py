@@ -53,7 +53,7 @@ class Gmail(object):
                 flow = InstalledAppFlow.from_client_secrets_file(
                     credentials, self.SCOPES
                 )
-                creds = flow.run_local_server()
+                creds = flow.run_local_server(port=0)
             else:
                 return False
 
@@ -184,3 +184,20 @@ class Gmail(object):
         ids["date"] = d.date
         self.__save_ids(ids)
         return retval
+
+
+if __name__ == '__main__':
+    import json, sys
+
+    with open('configs.json', 'r') as f:
+        configs = json.load(f)
+
+    gm = Gmail()
+
+    if not gm.connect(configs["gmail"]["credfile"]):
+        print("Cannot connect Gmail.")
+        sys.exit()
+
+    for addr in configs["gmail"]["addrs"]:
+        for m in gm.get_messages(addr):
+            print(m["msg"])
