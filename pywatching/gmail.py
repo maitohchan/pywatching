@@ -32,7 +32,7 @@ class Gmail(object):
         self.__id_file = os.path.join(tmp_dir, "gmail_ids.pkl")
         self.__token_file = os.path.join(tmp_dir, "token.pickle")
 
-    def connect(self, credentials: str = 'credentials.json') -> bool:
+    def connect(self, credentials: str = "credentials.json") -> bool:
         """connect Gmail server.
 
         Args:
@@ -77,7 +77,9 @@ class Gmail(object):
         Returns:
             str: query
         """
-        return "from:{} after:{} before:{}".format(address, date.today(), date.tomorrow())
+        return "from:{} after:{} before:{}".format(
+            address, date.today(), date.tomorrow()
+        )
 
     def __load_ids(self, address: str, date: str) -> dict:
         """load IDs from pickle file
@@ -175,10 +177,12 @@ class Gmail(object):
                 continue
 
             date, subject, snippet = self.__extract_info(mid)
-            retval.append({
-                "id": mid,
-                "msg": "Date: {}\nSubject: {}\n{}".format(date, subject, snippet)
-            })
+            retval.append(
+                {
+                    "id": mid,
+                    "msg": "Date: {}\nSubject: {}\n{}".format(date, subject, snippet),
+                }
+            )
             ids["ids"][address].append(mid)
 
         ids["date"] = d.date
@@ -186,10 +190,11 @@ class Gmail(object):
         return retval
 
 
-if __name__ == '__main__':
-    import json, sys
+if __name__ == "__main__":
+    import sys
+    import json
 
-    with open('configs.json', 'r') as f:
+    with open("configs.json", "r") as f:
         configs = json.load(f)
 
     gm = Gmail()
