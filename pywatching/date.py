@@ -11,29 +11,31 @@ class Date(object):
     Arguments:
         dt (datetime): coverted date to datetime
     """
+
     def __init__(self, date: str = None):
-        self.__dt = self.__str2dt(date) if date else datetime.date.now()
+        self.__dt = self.__str2dt(date) if date else datetime.datetime.now()
 
     @property
-    def date(self):
+    def date(self) -> str:
+
         """retun current date
 
         Returns:
-            datetime: current date
+            str: current date
         """
         return self.__dt.strftime("%Y/%m/%d")
 
     @property
-    def datetime(self):
-        """retun current datetime
+    def time(self) -> str:
+        """retun current time
 
         Returns:
-            datetime: current datetime
+            str: current time
         """
-        return self.__dt
+        return self.__dt.strftime("%H:%M:%S")
 
     @staticmethod
-    def __str2dt(date: str) -> datetime.date:
+    def __str2dt(date: str) -> datetime:
         """convert string to datetime
 
         Args:
