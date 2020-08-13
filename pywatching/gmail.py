@@ -32,7 +32,7 @@ class Gmail(object):
         self.__id_file = os.path.join(tmp_dir, "gmail_ids.pkl")
         self.__token_file = os.path.join(tmp_dir, "token.pickle")
 
-    def connect(self, credentials: str = 'credentials.json') -> bool:
+    def connect(self, credentials: str = "credentials.json") -> bool:
         """connect Gmail server.
 
         Args:
@@ -53,7 +53,7 @@ class Gmail(object):
                 flow = InstalledAppFlow.from_client_secrets_file(
                     credentials, self.SCOPES
                 )
-                creds = flow.run_local_server()
+                creds = flow.run_local_server(port=0)
             else:
                 return False
 
@@ -77,9 +77,9 @@ class Gmail(object):
         Returns:
             str: query
         """
-        from_date = date.yesterday()
-        to_date = date.tomorrow()
-        return "from:{} after:{} before:{}".format(address, from_date, to_date)
+        return "from:{} after:{} before:{}".format(
+            address, date.today(), date.tomorrow()
+        )
 
     def __load_ids(self, address: str, date: str) -> dict:
         """load IDs from pickle file
@@ -177,12 +177,32 @@ class Gmail(object):
                 continue
 
             date, subject, snippet = self.__extract_info(mid)
-            retval.append({
-                "id": mid,
-                "msg": "Date: {}\nSubject: {}\n{}".format(date, subject, snippet)
-            })
+            retval.append(
+                {
+                    "id": mid,
+                    "msg": "Date: {}\nSubject: {}\n{}".format(date, subject, snippet),
+                }
+            )
             ids["ids"][address].append(mid)
 
         ids["date"] = d.date
         self.__save_ids(ids)
         return retval
+
+
+if __name__ == "__main__":
+    import sys
+    import json
+
+    with open("configs.json", "r") as f:
+        configs = json.load(f)
+
+    gm = Gmail()
+
+    if not gm.connect(configs["gmail"]["credfile"]):
+        print("Cannot connect Gmail.")
+        sys.exit()
+
+    for addr in configs["gmail"]["addrs"]:
+        for m in gm.get_messages(addr):
+            print(m["msg"])

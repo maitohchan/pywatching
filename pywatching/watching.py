@@ -2,6 +2,7 @@ from pywatching.googlehome import GoogleHome
 from pywatching.line import Line
 from pywatching.gmail import Gmail
 from pywatching.logger import Logger
+from pywatching.temperature import Temperature
 
 import argparse
 import json
@@ -38,27 +39,30 @@ def notify(configs):
     return True
 
 
+def temperature(configs):
+    t = Temperature(outdir="temp")
+    t.record()
+    return True
+
+
 def main():
     logger.info("--- start logging ---")
 
     default_config_path = os.path.join(os.getcwd(), "configs.json")
     parser = argparse.ArgumentParser()
-    parser.add_argument("type", choices=["alarm", "notify"])
+    parser.add_argument("type", choices=["alarm", "notify", "temperature"])
     parser.add_argument("--configs", type=str, default=default_config_path)
     args = parser.parse_args()
 
-    with open(args.configs, 'r') as f:
+    with open(args.configs, "r") as f:
         configs = json.load(f)
 
-    func = {
-        "alarm": alarm,
-        "notify": notify
-    }
+    func = {"alarm": alarm, "notify": notify, "temperature": temperature}
 
     ret = func[args.type](configs)
     logger.info(args.type + " -> " + str(ret))
     logger.info("--- end logging ---")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

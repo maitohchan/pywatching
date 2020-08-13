@@ -1,12 +1,12 @@
 {
     "logfile": "s.log",
     "line": {
-        "token": "xxxx"
+        "token": ""
     },
     "gmail": {
         "credfile": "./credentials.json",
         "addrs": [
-            "xxx@yyy",
+            ""
         ]
     },
     "ghome": {
